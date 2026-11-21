@@ -26,8 +26,10 @@
 \title{Validador de frases com ``respectivamente'':\\
 reconhecimento com autômato de pilha e autômato linearmente limitado}
 \author{%
-  \textit{(Nome completo 1)} \and \textit{(Nome completo 2)} \and
-  \textit{(Nome completo 3)} \and \textit{(Nome completo 4)}\\[4pt]
+  Felipe Gabriel Souza Libório\\
+  Felipe Vieira Brazão e Silva\\
+  Gabriel Coelho Goes\\
+  João Ricardo Silva de Almeida\\[8pt]
   Linguagens Formais e Autômatos --- Turma \textit{(CC6MA / CC6NA)}\\
   Repositório: \url{https://github.com/CoelhoGoes/validador-frases-ptbr}}
 \date{Novembro de 2026}
@@ -549,22 +551,35 @@ Passos do ALL & 14 & 114 & 374 & 1.344 & 7.854 \\
   \item rascunho deste relatório.
 \end{itemize}
 
-\textbf{O que a equipe verificou:} \textit{(preencher: rastreamentos simulados à mão, provas conferidas, referências conferidas na fonte, alterações feitas)}.
+\textbf{O que a equipe verificou:}
+\begin{itemize}
+  \item cada integrante simulou à mão o autômato da sua parte nos três cenários de integração e comparou o resultado, passo a passo, com o rastreamento exibido pelo programa;
+  \item a justificativa de que $L(G)=\Lum$, a prova de que $\Lum$ não é regular e a prova de que $\Ldois$ não é livre de contexto foram revisadas por pelo menos dois integrantes;
+  \item o código foi lido para confirmar que as decisões saem só das tabelas de transição, sem contagem de símbolos nem expressões regulares;
+  \item os 41 casos de teste e a comparação com as definições de $\Lum$ e $\Ldois$ foram executados, e todos passaram;
+  \item as referências bibliográficas (autores, volumes, páginas e edições) foram conferidas nas fontes originais.
+\end{itemize}
 
 %======================================================================
 \section{Contribuição de cada integrante}
 
 \begin{center}
-\begin{tabular}{p{4.5cm}p{9.5cm}}
+\begin{tabular}{p{3.6cm}p{4.4cm}p{2.6cm}p{3.4cm}}
 \toprule
-Integrante & Contribuição \\
+Integrante & Parte técnica & Revisão cruzada & Relatório e slides \\
 \midrule
-\textit{(Nome 1)} & \textit{(ex.: GLC, derivação e prova de não regularidade)} \\
-\textit{(Nome 2)} & \textit{(ex.: especificação e justificativa do AP)} \\
-\textit{(Nome 3)} & \textit{(ex.: especificação do ALL e limite da fita)} \\
-\textit{(Nome 4)} & \textit{(ex.: implementação e testes)} \\
+Felipe Gabriel Souza Libório & GLC, justificativa de $L(G)=\Lum$, derivação e prova de que $\Lum$ não é regular & especificação do AP & Seções 1 e 2 \\
+\addlinespace
+Felipe Vieira Brazão e Silva & especificação do AP, diagrama, justificativa e rastreamentos & GLC e derivação & Seção 3 \\
+\addlinespace
+Gabriel Coelho Goes & especificação do ALL, limite da fita, terminação e prova de que $\Ldois$ não é livre de contexto & testes & Seção 4 \\
+\addlinespace
+João Ricardo Silva de Almeida & implementação dos simuladores e da integração, casos de teste e análise dos resultados & especificação do ALL & Seções 5 a 7 \\
 \bottomrule
 \end{tabular}
+
+\medskip
+Na apresentação, cada integrante explica a sua parte técnica. Todos participaram da escolha do problema e da revisão final.
 \end{center}
 
 %======================================================================

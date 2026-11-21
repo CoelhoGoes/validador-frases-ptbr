@@ -2,7 +2,11 @@
 
 Trabalho prático de Linguagens Formais e Autômatos: reconhecimento de linguagens com pilha e fita limitada.
 
-**Equipe:** _(nomes completos)_ — turma _(CC6MA / CC6NA)_
+**Equipe** (turma _(CC6MA / CC6NA)_):
+- Felipe Gabriel Souza Libório
+- Felipe Vieira Brazão e Silva
+- Gabriel Coelho Goes
+- João Ricardo Silva de Almeida
 
 ## O problema
 
@@ -129,4 +133,18 @@ Termina com código 0 se tudo passar.
 - elaboração dos casos de teste e do script de testes;
 - redação deste README.
 
-**O que a equipe verificou:** _(preencher: por exemplo, quem simulou à mão quais rastreamentos, quem conferiu as provas, quais referências foram conferidas na fonte, o que foi alterado)_
+**O que a equipe verificou:**
+- cada integrante simulou à mão o autômato da sua parte nos três cenários de integração e comparou o resultado com o rastreamento do programa;
+- as provas de classificação de L1 e L2 e a justificativa de que a GLC gera L1 foram revisadas por pelo menos dois integrantes;
+- o código foi lido para confirmar que as decisões saem só das tabelas de transição;
+- os 41 casos de teste e a comparação com as definições formais foram executados, e todos passaram;
+- as referências bibliográficas foram conferidas nas fontes originais.
+
+## Contribuições
+
+| Integrante | Parte técnica | Revisão cruzada |
+|---|---|---|
+| Felipe Gabriel Souza Libório | GLC, derivação e prova de que L1 não é regular | especificação do AP |
+| Felipe Vieira Brazão e Silva | especificação, diagrama, justificativa e rastreamentos do AP | GLC e derivação |
+| Gabriel Coelho Goes | especificação do ALL, limite da fita, terminação e prova de que L2 não é livre de contexto | testes |
+| João Ricardo Silva de Almeida | implementação, casos de teste e análise dos resultados | especificação do ALL |
