@@ -144,7 +144,7 @@ Termina com código 0 se tudo passar.
 
 | Integrante | Parte técnica | Revisão cruzada |
 |---|---|---|
-| Felipe Gabriel Souza Libório | GLC, derivação e prova de que L1 não é regular | especificação do AP |
-| Felipe Vieira Brazão e Silva | especificação, diagrama, justificativa e rastreamentos do AP | GLC e derivação |
-| Gabriel Coelho Goes | especificação do ALL, limite da fita, terminação e prova de que L2 não é livre de contexto | testes |
+| Felipe Gabriel Souza Libório | especificação, diagrama, justificativa e rastreamentos do AP | GLC e derivação |
+| Felipe Vieira Brazão e Silva | especificação do ALL, limite da fita, terminação e prova de que L2 não é livre de contexto | testes |
+| Gabriel Coelho Goes | proposta do tema, pesquisa e fundamentação, definição de L1 e L2, GLC, derivação e prova de que L1 não é regular | especificação do AP |
 | João Ricardo Silva de Almeida | implementação, casos de teste e análise dos resultados | especificação do ALL |
