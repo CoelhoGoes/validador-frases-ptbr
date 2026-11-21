@@ -2,7 +2,7 @@
 
 Trabalho prático de Linguagens Formais e Autômatos: reconhecimento de linguagens com pilha e fita limitada.
 
-**Equipe** (turma _(CC6MA / CC6NA)_):
+**Equipe** (turma CC6NA):
 - Felipe Gabriel Souza Libório
 - Felipe Vieira Brazão e Silva
 - Gabriel Coelho Goes
