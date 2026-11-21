@@ -83,7 +83,7 @@ Feito: `README.md`, `requirements.txt` (vazio: sem dependências) e `.gitignore`
 - [ ] **Declaração de uso de IA**: ferramenta, tarefas em que ajudou e o que a equipe verificou (este planejamento conta).
 
 ## Etapa 8 — Relatório técnico em LaTeX → PDF (24/11)
-Escrito em LaTeX (pasta `relatorio/` no repositório) e compilado para PDF. Diagramas com TikZ (pacote `automata`); tabelas de teste geradas pelo script da Etapa 6.
+Feito: `relatorio/relatorio.tex` + `relatorio/tabela-testes.tex` (gerada pelos testes). Compilar no Overleaf subindo a pasta `relatorio/` inteira (pdfLaTeX). Pendente: nomes, contribuições, "o que a equipe verificou" e conferir a compilação. Diagramas com TikZ (pacote `automata`); tabelas de teste geradas pelo script da Etapa 6.
 
 Seções:
 1. Problema e contexto

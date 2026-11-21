@@ -1,4 +1,4 @@
-"""Roda os casos de testes/casos.csv e gera testes/resultados.md e testes/resultados.tex.
+"""Roda os casos de testes/casos.csv e gera testes/resultados.md e relatorio/tabela-testes.tex.
 
 Uso:  python3 testes/rodar_testes.py
 Saída 0 se todos os casos derem a decisão esperada e a conferência com as definições passar.
@@ -119,7 +119,7 @@ def main():
         linhas = [c for c in casos if c["modulo"].startswith(grupo)]
         md += [f"## {NOMES[grupo]}", "", "| ID | Entrada | Tam. | Esperado | Obtido | Regra verificada |",
                "|---|---|---|---|---|---|"]
-        tx += [f"\\subsection*{{{NOMES[grupo]}}}", "\\begin{longtable}{l p{5.2cm} r l l p{5cm}}",
+        tx += [f"\\subsection*{{{NOMES[grupo]}}}", "{\\footnotesize\\setlength{\\tabcolsep}{3pt}\\begin{longtable}{l p{4cm} r l l p{3.8cm}}",
                "\\textbf{ID} & \\textbf{Entrada} & \\textbf{Tam.} & \\textbf{Esperado} & \\textbf{Obtido} & "
                "\\textbf{Regra verificada} \\\\ \\hline \\endhead"]
         for c in linhas:
@@ -127,9 +127,9 @@ def main():
             marca = "" if c["ok"] else " ✗"
             md.append(f"| {c['id']} | `{w}` | {len(w)} | {c['esperado']} | {c['obtido']}{marca} | {c['regra']} |"
                       if w else f"| {c['id']} | (vazia) | 0 | {c['esperado']} | {c['obtido']}{marca} | {c['regra']} |")
-            tx.append(f"{c['id']} & \\texttt{{{tex(w) or '(vazia)'}}} & {len(w)} & {tex(c['esperado'])} & "
+            tx.append(f"{c['id']} & \\texttt{{{tex(w).replace(',', ',\\allowbreak{}') or '(vazia)'}}} & {len(w)} & {tex(c['esperado'])} & "
                       f"{tex(c['obtido'])} & {tex(c['regra'])} \\\\")
-        tx.append("\\end{longtable}")
+        tx.append("\\end{longtable}}")
         md.append("")
         if grupo == "ALFABETO":
             md += ["### Mensagens de erro exibidas", ""]
@@ -143,14 +143,14 @@ def main():
            f"Todas as cadeias de comprimento ≤ 7 sobre {{o,O,`,`,&,s,r,.}} (AP) e ≤ 6 sobre o alfabeto do ALL: "
            f"**{definicoes}**.", ""]
     (PASTA / "resultados.md").write_text("\n".join(md), encoding="utf-8")
-    (PASTA / "resultados.tex").write_text("\n".join(tx) + "\n", encoding="utf-8")
+    (PASTA.parent / "relatorio" / "tabela-testes.tex").write_text("\n".join(tx) + "\n", encoding="utf-8")
 
     total = len(casos)
     print(f"{total - sum(not c['ok'] for c in casos)}/{total} casos com a decisão esperada")
     print(f"conferência com as definições: {definicoes}")
     for p in problemas:
         print("FALHA:", p)
-    print("tabelas: testes/resultados.md, testes/resultados.tex")
+    print("tabelas: testes/resultados.md, relatorio/tabela-testes.tex")
     return 1 if problemas else 0
 
 

@@ -1,0 +1,580 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage{lmodern}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs,longtable,array}
+\usepackage{tikz}
+\usetikzlibrary{automata,positioning,arrows.meta}
+\usepackage{newunicodechar}
+\usepackage[hidelinks]{hyperref}
+
+\newunicodechar{→}{\ensuremath{\rightarrow}}
+\newunicodechar{×}{\ensuremath{\times}}
+\newunicodechar{…}{\ldots}
+\newunicodechar{₀}{\ensuremath{_0}}
+\newunicodechar{δ}{\ensuremath{\delta}}
+
+\newcommand{\cad}[1]{\texttt{#1}}       % cadeia / símbolo
+\newcommand{\Lum}{L_1}
+\newcommand{\Ldois}{L_2}
+\newtheorem*{prop}{Proposição}
+
+\title{Validador de frases com ``respectivamente'':\\
+reconhecimento com autômato de pilha e autômato linearmente limitado}
+\author{%
+  \textit{(Nome completo 1)} \and \textit{(Nome completo 2)} \and
+  \textit{(Nome completo 3)} \and \textit{(Nome completo 4)}\\[4pt]
+  Linguagens Formais e Autômatos --- Turma \textit{(CC6MA / CC6NA)}\\
+  Repositório: \url{https://github.com/CoelhoGoes/validador-frases-ptbr}}
+\date{Novembro de 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Este trabalho implementa um validador em duas etapas para frases do português com a construção \emph{respectivamente}, em que o $i$-ésimo predicativo concorda em gênero e número com o $i$-ésimo sujeito. Um autômato de pilha (AP), derivado de uma gramática livre de contexto, verifica a estrutura da frase e se há tantos predicativos quanto sujeitos. Em seguida, um autômato linearmente limitado (ALL) verifica a concordância \emph{cruzada} entre as duas listas. Mostramos que a linguagem do AP é livre de contexto e não é regular, e que a do ALL é sensível ao contexto e não é livre de contexto. Os dois autômatos são determinísticos, foram implementados em Python e passaram em 41 casos de teste. Também foram comparados com as definições formais em cerca de 1,26 milhão de cadeias.
+\end{abstract}
+
+\tableofcontents
+
+%======================================================================
+\section{Problema}
+
+Em português, a construção com \emph{respectivamente} liga os itens de duas listas pela posição:
+
+\begin{quote}
+\emph{O João, a Maria, os meninos, as meninas e o Pedro são, respectivamente, médico, advogada, engenheiros, professoras e músico.}
+\end{quote}
+
+O $i$-ésimo predicativo concorda em gênero e número com o $i$-ésimo sujeito. Esse padrão, em que o 1º item se liga ao 1º, o 2º ao 2º e assim por diante, é chamado de \emph{dependência cruzada}. Shieber~\cite{shieber} usou dependências cruzadas do alemão suíço para mostrar que línguas naturais não são livres de contexto. Bar-Hillel e Shamir~\cite{barhillel} já haviam usado o argumento com \emph{respectively} para o inglês, e Pullum e Gazdar~\cite{pullum} o contestaram: em inglês os adjetivos não variam, então a correspondência é só de sentido. Em português, gênero e número aparecem na própria palavra (\emph{médico}/\emph{advogada}/\emph{engenheiros}), e a dependência pode ser verificada na cadeia.
+
+\paragraph{Escopo da classificação.} As classificações deste relatório se referem às \emph{linguagens formais definidas aqui}, que modelam a construção, e são provadas com os lemas do bombeamento. Não afirmamos nada sobre o português como um todo.
+
+\paragraph{Divisão em dois módulos.}
+\begin{itemize}
+  \item \textbf{AP:} verifica a estrutura (pontuação das listas, pelo menos 2 itens e o mesmo número de sujeitos e predicativos). A linguagem é livre de contexto e não é regular.
+  \item \textbf{ALL:} verifica a concordância cruzada. A linguagem é sensível ao contexto e não é livre de contexto. O ALL só executa se o AP aceitar.
+\end{itemize}
+
+\subsection{Codificação}
+
+Cada palavra ou expressão vira um símbolo. Sujeitos e predicativos caem em quatro classes de concordância:
+
+\begin{center}
+\begin{tabular}{lccl}
+\toprule
+Classe & Sujeito & Predicativo & Exemplo \\
+\midrule
+masculino singular & \cad{o} & \cad{O} & o João \ldots\ médico \\
+feminino singular  & \cad{a} & \cad{A} & a Maria \ldots\ advogada \\
+masculino plural   & \cad{x} & \cad{X} & os meninos \ldots\ engenheiros \\
+feminino plural    & \cad{y} & \cad{Y} & as meninas \ldots\ professoras \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Os demais símbolos são \cad{,} (vírgula), \cad{\&} (o ``e'' antes do último item), \cad{s} (``são''), \cad{r} (``respectivamente'') e \cad{.} (fim). A frase acima vira \cad{o,a,x,y\&osrO,A,X,Y\&O.}
+
+Notação: $C=\{\cad{o},\cad{a},\cad{x},\cad{y}\}$, $P=\{\cad{O},\cad{A},\cad{X},\cad{Y}\}$ e $h:C\to P$ com $h(\cad{o})=\cad{O}$, $h(\cad{a})=\cad{A}$, $h(\cad{x})=\cad{X}$, $h(\cad{y})=\cad{Y}$.
+
+%======================================================================
+\section{Linguagem livre de contexto e gramática}
+
+\subsection{Linguagem $\Lum$}
+
+Alfabeto: $\Sigma_1 = C \cup P \cup \{\cad{,},\cad{\&},\cad{s},\cad{r},\cad{.}\}$.
+\[
+\Lum = \{\, c_1\cad{,}c_2\cad{,}\cdots\cad{,}c_{n-1}\cad{\&}c_n\;\cad{sr}\;p_1\cad{,}p_2\cad{,}\cdots\cad{,}p_{n-1}\cad{\&}p_n\,\cad{.} \;\mid\; c_i\in C,\ p_i\in P,\ n\ge 2 \,\}
+\]
+
+\textbf{Regra de formação:} uma lista de $n\ge 2$ sujeitos, com vírgula entre os itens e \cad{\&} antes do último; depois \cad{sr}; depois uma lista de \emph{exatamente $n$} predicativos com a mesma pontuação; por fim \cad{.}. As classes são livres em $\Lum$: a concordância é responsabilidade do ALL.
+
+\subsection{Gramática}
+
+$G = (V, \Sigma_1, R, S)$, com não terminais $V=\{S, L, C, P\}$, símbolo inicial $S$ e produções:
+\begin{align*}
+(1)\quad & S \to L\ \cad{\&}\ P\ \cad{.} \\
+(2)\quad & L \to C\ \cad{,}\ L\ \cad{,}\ P \\
+(3)\quad & L \to C\ \cad{\&}\ C\ \cad{s}\ \cad{r}\ P \\
+(4\text{--}7)\quad & C \to \cad{o} \mid \cad{a} \mid \cad{x} \mid \cad{y} \\
+(8\text{--}11)\quad & P \to \cad{O} \mid \cad{A} \mid \cad{X} \mid \cad{Y}
+\end{align*}
+
+$S$ é a frase; $L$ é o ``miolo'' (todos os sujeitos, \cad{sr} e todos os predicativos menos o último); $C$ e $P$ são um sujeito e um predicativo.
+
+\subsection{Justificativa: $L(G)=\Lum$}
+
+\textbf{Contagem.} Cada uso de (2) gera um $C$ e um $P$; (3) gera dois $C$ e um $P$; (1) gera mais um $P$. Com $k$ usos de (2), a frase tem $k+2$ sujeitos e $k+2$ predicativos, logo $n=k+2\ge2$.
+
+\textbf{Pontuação.} Por indução em $k$, $L$ gera exatamente $c_1\cad{,}\cdots\cad{,}c_{k+1}\cad{\&}c_{k+2}\,\cad{sr}\,p_1\cad{,}\cdots\cad{,}p_{k+1}$. O caso base é (3). No passo, (2) acrescenta um sujeito com vírgula à esquerda e um predicativo com vírgula à direita. A produção (1) fecha com \cad{\&}$p_n$\cad{.}. Logo $L(G)\subseteq\Lum$. Toda cadeia de $\Lum$ com $n$ itens é derivada aplicando (2) $n-2$ vezes, depois (3), e escolhendo as classes, o que dá $\Lum\subseteq L(G)$.
+
+Também conferimos computacionalmente que $G$ gera exatamente as cadeias de $\Lum$ para $n$ de 2 a 4 (69.888 cadeias).
+
+\textbf{Observação.} Em (2), o sujeito e o predicativo gerados juntos são o 1º sujeito e o \emph{penúltimo} predicativo: um par \emph{aninhado}. A gramática garante as quantidades, mas não forma os pares cruzados. É por isso que a concordância fica com o ALL.
+
+\subsection{Derivação de uma cadeia aceita}
+
+Derivação mais à esquerda de \cad{o,a,x,y\&osrO,A,X,Y\&O.} ($n=5$), que é a cadeia do cenário de integração aceito pelos dois módulos:
+
+\begin{center}
+\begin{tabular}{rll}
+\toprule
+Passo & Forma sentencial & Produção \\
+\midrule
+0 & $S$ & \\
+1 & $L$\cad{\&}$P$\cad{.} & (1) \\
+2 & $C$\cad{,}$L$\cad{,}$P$\cad{\&}$P$\cad{.} & (2) \\
+3 & \cad{o,}$L$\cad{,}$P$\cad{\&}$P$\cad{.} & (4) \\
+4 & \cad{o,}$C$\cad{,}$L$\cad{,}$P$\cad{,}$P$\cad{\&}$P$\cad{.} & (2) \\
+5 & \cad{o,a,}$L$\cad{,}$P$\cad{,}$P$\cad{\&}$P$\cad{.} & (5) \\
+6 & \cad{o,a,}$C$\cad{,}$L$\cad{,}$P$\cad{,}$P$\cad{,}$P$\cad{\&}$P$\cad{.} & (2) \\
+7 & \cad{o,a,x,}$L$\cad{,}$P$\cad{,}$P$\cad{,}$P$\cad{\&}$P$\cad{.} & (6) \\
+8 & \cad{o,a,x,}$C$\cad{\&}$C$\cad{sr}$P$\cad{,}$P$\cad{,}$P$\cad{,}$P$\cad{\&}$P$\cad{.} & (3) \\
+9 & \cad{o,a,x,y\&}$C$\cad{sr}$P$\cad{,}$P$\cad{,}$P$\cad{,}$P$\cad{\&}$P$\cad{.} & (7) \\
+10 & \cad{o,a,x,y\&osr}$P$\cad{,}$P$\cad{,}$P$\cad{,}$P$\cad{\&}$P$\cad{.} & (4) \\
+11 & \cad{o,a,x,y\&osrO,}$P$\cad{,}$P$\cad{,}$P$\cad{\&}$P$\cad{.} & (8) \\
+12 & \cad{o,a,x,y\&osrO,A,}$P$\cad{,}$P$\cad{\&}$P$\cad{.} & (9) \\
+13 & \cad{o,a,x,y\&osrO,A,X,}$P$\cad{\&}$P$\cad{.} & (10) \\
+14 & \cad{o,a,x,y\&osrO,A,X,Y\&}$P$\cad{.} & (11) \\
+15 & \cad{o,a,x,y\&osrO,A,X,Y\&O.} & (8) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{$\Lum$ não é regular}
+
+Toda cadeia de $\Lum$ satisfaz: (P1) o número de símbolos de $C$ é igual ao de $P$; (P2) não há dois símbolos de $C$ seguidos.
+
+\begin{prop}
+$\Lum$ não é regular.
+\end{prop}
+\begin{proof}
+Suponha que $\Lum$ seja regular, com comprimento de bombeamento $p$. Seja $w=(\cad{o,})^p\,\cad{o\&osr}\,(\cad{O,})^p\,\cad{O\&O.}\in\Lum$. Pelo lema, $w=xyz$ com $|xy|\le p$ e $|y|\ge1$. Então $y$ está dentro de $(\cad{o,})^p$. Se $y$ contém algum \cad{o}, $xz$ tem menos sujeitos que predicativos, o que viola (P1). Caso contrário, $y=\cad{,}$, e $xz$ tem dois \cad{o} seguidos, o que viola (P2). Nos dois casos $xz\notin\Lum$, uma contradição.
+\end{proof}
+
+%======================================================================
+\section{Autômato de pilha}
+
+\subsection{Especificação}
+
+$M_1=(Q,\Sigma_1,\Gamma,\delta,q_0,Z_0,F)$, com
+$Q=\{q_0,\dots,q_{11}\}$ (12 estados), $\Gamma=\{S,Z_0\}$ e $F=\{q_{11}\}$. Cada $S$ representa um sujeito ainda não pareado.
+\textbf{Configuração inicial:} $(q_0, w, Z_0)$.
+\textbf{Aceitação:} por \emph{estado final}, com a entrada inteira consumida. Falta de transição antes do fim, ou fim da entrada fora de $q_{11}$, significa rejeição.
+
+\begin{center}
+\begin{tabular}{rlll}
+\toprule
+\# & Transição & Ação & Papel \\
+\midrule
+1 & $\delta(q_0, c, Z_0)=(q_1, SZ_0)$ & empilha & 1º sujeito \\
+2 & $\delta(q_1, \cad{,}, S)=(q_2, S)$ & --- & vírgula entre sujeitos \\
+3 & $\delta(q_1, \cad{\&}, S)=(q_3, S)$ & --- & ``e'' antes do último sujeito \\
+4 & $\delta(q_2, c, S)=(q_1, SS)$ & empilha & sujeito após vírgula \\
+5 & $\delta(q_3, c, S)=(q_4, SS)$ & empilha & último sujeito \\
+6 & $\delta(q_4, \cad{s}, S)=(q_5, S)$ & --- & ``são'' \\
+7 & $\delta(q_5, \cad{r}, S)=(q_6, S)$ & --- & ``respectivamente'' \\
+8 & $\delta(q_6, p, S)=(q_7, \varepsilon)$ & desempilha & 1º predicativo \\
+9 & $\delta(q_7, \cad{,}, S)=(q_8, S)$ & --- & vírgula entre predicativos \\
+10 & $\delta(q_7, \cad{\&}, S)=(q_9, S)$ & --- & ``e'' antes do último predicativo \\
+11 & $\delta(q_8, p, S)=(q_7, \varepsilon)$ & desempilha & predicativo após vírgula \\
+12 & $\delta(q_9, p, S)=(q_{10}, \varepsilon)$ & desempilha & último predicativo \\
+13 & $\delta(q_{10}, \cad{.}, Z_0)=(q_{11}, Z_0)$ & --- & todos os sujeitos pareados \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Nessa tabela, $c\in C$ e $p\in P$. Expandindo as quatro classes, são 31 transições. Qualquer combinação fora da tabela leva à rejeição.
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}[>=Stealth, shorten >=1pt, auto, node distance=1.6cm, every state/.style={minimum size=9mm}, font=\scriptsize]
+  \node[state, initial, initial text=] (q0) {$q_0$};
+  \node[state, right=of q0] (q1) {$q_1$};
+  \node[state, above=1.4cm of q1] (q2) {$q_2$};
+  \node[state, right=of q1] (q3) {$q_3$};
+  \node[state, right=of q3] (q4) {$q_4$};
+  \node[state, right=of q4] (q5) {$q_5$};
+  \node[state, below=2cm of q5] (q6) {$q_6$};
+  \node[state, left=of q6] (q7) {$q_7$};
+  \node[state, below=1.4cm of q7] (q8) {$q_8$};
+  \node[state, left=of q7] (q9) {$q_9$};
+  \node[state, left=of q9] (q10) {$q_{10}$};
+  \node[state, accepting, left=of q10] (q11) {$q_{11}$};
+  \path[->]
+    (q0) edge node {$c,Z_0/SZ_0$} (q1)
+    (q1) edge[bend left] node {$\texttt{,},S/S$} (q2)
+    (q2) edge[bend left] node {$c,S/SS$} (q1)
+    (q1) edge node {$\texttt{\&},S/S$} (q3)
+    (q3) edge node {$c,S/SS$} (q4)
+    (q4) edge node {$\texttt{s},S/S$} (q5)
+    (q5) edge node {$\texttt{r},S/S$} (q6)
+    (q6) edge node[swap] {$p,S/\varepsilon$} (q7)
+    (q7) edge[bend left] node {$\texttt{,},S/S$} (q8)
+    (q8) edge[bend left] node {$p,S/\varepsilon$} (q7)
+    (q7) edge node[swap] {$\texttt{\&},S/S$} (q9)
+    (q9) edge node[swap] {$p,S/\varepsilon$} (q10)
+    (q10) edge node[swap] {$\texttt{.},Z_0/Z_0$} (q11);
+\end{tikzpicture}
+\caption{Diagrama do AP. Rótulos: símbolo lido, topo / cadeia que substitui o topo.}
+\end{figure}
+
+\subsection{Justificativa: $L(M_1)=\Lum$}
+
+\textbf{Invariante.} Depois de ler um prefixo com $k$ sujeitos e $j$ predicativos, a pilha é $S^{k-j}Z_0$. Cada sujeito empilha um $S$ (transições 1, 4 e 5), cada predicativo desempilha um (8, 11 e 12), e nenhuma outra transição altera a quantidade.
+
+\textbf{Formato.} Ignorando a pilha, os estados formam um autômato finito:
+\begin{itemize}
+  \item $q_0$--$q_4$ reconhecem $c(\cad{,}c)^*\cad{\&}c$, a lista de sujeitos, que só chega a $q_4$ passando por \cad{\&}, o que garante $n\ge2$;
+  \item $q_4$--$q_6$ reconhecem \cad{sr};
+  \item $q_6$--$q_{11}$ reconhecem $p(\cad{,}p)^*\cad{\&}p\cad{.}$, a lista de predicativos.
+\end{itemize}
+
+\textbf{Contagem.} A única transição para $q_{11}$ exige $Z_0$ no topo, isto é, $k=j$.
+\begin{itemize}
+  \item \textbf{($\subseteq$):} uma cadeia aceita tem o formato correto e $k=j$.
+  \item \textbf{($\supseteq$):} para $w\in\Lum$, depois do $j$-ésimo predicativo restam $n-j\ge1$ símbolos $S$ enquanto $j<n$. Assim as transições 9 a 12 sempre encontram $S$ no topo, e o último predicativo deixa $Z_0$ para o \cad{.}.
+\end{itemize}
+
+\textbf{Relação com a GLC.}
+\begin{itemize}
+  \item Cada aplicação de (2) corresponde a uma volta de empilhamento ($q_1\to q_2\to q_1$) e, depois, a uma de desempilhamento ($q_7\to q_8\to q_7$).
+  \item (3) é o centro da frase ($q_3\to q_4\to q_5\to q_6\to q_7$), onde a pilha para de crescer.
+  \item (1) é o fechamento ($q_7\to q_9\to q_{10}\to q_{11}$).
+\end{itemize}
+A pilha é LIFO: o $S$ do 1º sujeito só sai com o último predicativo. O pareamento é aninhado, como na gramática.
+
+\subsection{Determinismo e terminação}
+
+Para cada (estado, símbolo, topo) há no máximo uma transição, e não existem transições $\varepsilon$: o AP é determinístico e o simulador não explora alternativas. Cada passo consome exatamente um símbolo, então para uma entrada de comprimento $m$ o AP para em no máximo $m$ passos.
+
+\subsection{Rastreamentos}
+
+Cada linha mostra a configuração \emph{antes} do passo. A pilha aparece com o topo à esquerda.
+
+{\small
+\begin{longtable}{rlrcll}
+\caption{AP sobre \cad{o,a,x,y\&osrO,A,X,Y\&O.} (cenário 1).}\\
+\toprule
+Passo & Estado & Posição & Lê & Pilha & Transição \\
+\midrule
+\endhead
+0 & $q_0$ & 1 & \cad{o} & $Z_0$ & $\to q_1$, empilha \\
+1 & $q_1$ & 2 & \cad{,} & $SZ_0$ & $\to q_2$ \\
+2 & $q_2$ & 3 & \cad{a} & $SZ_0$ & $\to q_1$, empilha \\
+3 & $q_1$ & 4 & \cad{,} & $SSZ_0$ & $\to q_2$ \\
+4 & $q_2$ & 5 & \cad{x} & $SSZ_0$ & $\to q_1$, empilha \\
+5 & $q_1$ & 6 & \cad{,} & $SSSZ_0$ & $\to q_2$ \\
+6 & $q_2$ & 7 & \cad{y} & $SSSZ_0$ & $\to q_1$, empilha \\
+7 & $q_1$ & 8 & \cad{\&} & $SSSSZ_0$ & $\to q_3$ \\
+8 & $q_3$ & 9 & \cad{o} & $SSSSZ_0$ & $\to q_4$, empilha \\
+9 & $q_4$ & 10 & \cad{s} & $SSSSSZ_0$ & $\to q_5$ \\
+10 & $q_5$ & 11 & \cad{r} & $SSSSSZ_0$ & $\to q_6$ \\
+11 & $q_6$ & 12 & \cad{O} & $SSSSSZ_0$ & $\to q_7$, desempilha \\
+12 & $q_7$ & 13 & \cad{,} & $SSSSZ_0$ & $\to q_8$ \\
+13 & $q_8$ & 14 & \cad{A} & $SSSSZ_0$ & $\to q_7$, desempilha \\
+14 & $q_7$ & 15 & \cad{,} & $SSSZ_0$ & $\to q_8$ \\
+15 & $q_8$ & 16 & \cad{X} & $SSSZ_0$ & $\to q_7$, desempilha \\
+16 & $q_7$ & 17 & \cad{,} & $SSZ_0$ & $\to q_8$ \\
+17 & $q_8$ & 18 & \cad{Y} & $SSZ_0$ & $\to q_7$, desempilha \\
+18 & $q_7$ & 19 & \cad{\&} & $SZ_0$ & $\to q_9$ \\
+19 & $q_9$ & 20 & \cad{O} & $SZ_0$ & $\to q_{10}$, desempilha \\
+20 & $q_{10}$ & 21 & \cad{.} & $Z_0$ & $\to q_{11}$ \\
+21 & $q_{11}$ & fim & --- & $Z_0$ & \textbf{aceita} \\
+\bottomrule
+\end{longtable}}
+
+\paragraph{Cenário 2: \cad{o,a,x,y\&osrO,A,X\&Y.}} Os passos 0--15 coincidem com os do cenário 1. Como há só 4 predicativos, o \cad{\&} aparece cedo: $q_7$ lê \cad{\&} com $SSZ_0$ e vai para $q_9$; $q_9$ desempilha \cad{Y} e vai para $q_{10}$ com $SZ_0$. No passo 18, $\delta(q_{10},\cad{.},S)$ não existe e o AP \textbf{rejeita}: sobrou um sujeito sem predicativo.
+
+\paragraph{Cenário 3: \cad{o,a,x,y\&osrO,A,O,Y\&O.}} A sequência de estados e de pilhas é a mesma do cenário 1. O AP \textbf{aceita}, porque não olha a classe. O erro de número fica para o ALL.
+
+%======================================================================
+\section{Linguagem sensível ao contexto e ALL}
+
+\subsection{Linguagem $\Ldois$}
+
+Alfabeto: $\Sigma_2 = C\cup P$.
+\[
+\Ldois = \{\, w\,h(w) \mid w\in C^{+} \,\}
+\]
+\textbf{Regra de aceitação:} uma sequência não vazia de sujeitos seguida de uma sequência de predicativos de mesmo tamanho, em que o $i$-ésimo predicativo é da mesma classe que o $i$-ésimo sujeito.
+
+\textbf{Entrada do ALL na integração:} depois que o AP aceita, o programa remove \cad{,}, \cad{\&}, \cad{s}, \cad{r} e \cad{.} e passa ao ALL só os sujeitos e predicativos, na ordem. Por exemplo, \cad{o,a,x,y\&osrO,A,X,Y\&O.} vira \cad{oaxyoOAXYO}.
+
+\subsection{Classificação}
+
+\begin{prop}
+$\Ldois$ não é livre de contexto.
+\end{prop}
+\begin{proof}
+Se $\Ldois$ fosse livre de contexto, $L'=\Ldois\cap\cad{o}^+\cad{a}^+\cad{O}^+\cad{A}^+=\{\cad{o}^i\cad{a}^j\cad{O}^i\cad{A}^j \mid i,j\ge1\}$ também seria, pois as LLC são fechadas sob interseção com linguagens regulares. Seja $p$ o comprimento de bombeamento e $s=\cad{o}^p\cad{a}^p\cad{O}^p\cad{A}^p=uvxyz$, com $|vxy|\le p$ e $|vy|\ge1$.
+\begin{itemize}
+  \item Os blocos \cad{o} e \cad{O} estão separados por $p$ símbolos \cad{a}, e os blocos \cad{a} e \cad{A} por $p$ símbolos \cad{O}. Então $vxy$ não toca os dois blocos de nenhum desses pares.
+  \item Se $v$ ou $y$ mistura símbolos, $uv^2xy^2z$ sai da forma $\cad{o}^+\cad{a}^+\cad{O}^+\cad{A}^+$.
+  \item Senão, o bombeamento altera um ou dois blocos vizinhos sem alterar o bloco parceiro, e $uv^2xy^2z\notin L'$.
+\end{itemize}
+Há contradição nos dois casos.
+\end{proof}
+
+$\Ldois$ é sensível ao contexto porque é reconhecida pelo ALL da próxima seção, e as linguagens reconhecidas por ALLs são exatamente as sensíveis ao contexto~\cite{kuroda}. A estrutura de $L'$ é a mesma das dependências cruzadas de Shieber~\cite{shieber}: uma pilha só consegue parear de forma aninhada.
+
+\subsection{Especificação}
+
+$M_2=(Q,\Sigma_2,\Gamma,\delta,q_0,\cad{<},\cad{>},q_{ac},q_{rej})$, com:
+\begin{itemize}
+  \item $Q=\{q_0,\dots,q_{10},q_{ac},q_{rej}\}$: 11 estados de trabalho e 2 de parada;
+  \item $\Gamma=\Sigma_2\cup\{\cad{*},\cad{+},\cad{<},\cad{>}\}$, em que \cad{*} é um sujeito já pareado, \cad{+} é um predicativo já pareado, e \cad{<} e \cad{>} são os marcadores de borda.
+\end{itemize}
+
+\textbf{Configuração inicial:} fita \cad{<}$w$\cad{>}, cabeçote no \cad{<} (posição 0) e estado $q_0$.
+\textbf{Aceitação:} chegar em $q_{ac}$. \textbf{Rejeição:} chegar em $q_{rej}$, que é o destino de toda combinação ausente da tabela.
+
+\paragraph{Limite da fita.} Para $n$ símbolos de entrada há $n$ células graváveis (posições $1..n$) e dois marcadores fixos (posições $0$ e $n+1$).
+\begin{itemize}
+  \item A memória de trabalho cabe nessas células: um símbolo pareado é sobrescrito por \cad{*} ou \cad{+}.
+  \item Toda transição que lê \cad{<} reescreve \cad{<} e move para a direita, e toda transição que lê \cad{>} reescreve \cad{>} e move para a esquerda. Assim os marcadores nunca são alterados e o cabeçote permanece em $[0,n+1]$.
+  \item A classe do sujeito em pareamento fica no \emph{estado} ($q_6$--$q_9$), não na fita.
+\end{itemize}
+
+{\small
+\begin{longtable}{rlp{6.2cm}}
+\toprule
+\# & Transição $\delta(q,\text{lê})=(q',\text{escreve},\text{mov.})$ & Papel \\
+\midrule
+\endhead
+1 & $\delta(q_0,\cad{<})=(q_1,\cad{<},R)$ & sai da borda esquerda \\
+2 & $\delta(q_1,c)=(q_2,c,R)$ & exige pelo menos um sujeito \\
+3 & $\delta(q_2,c)=(q_2,c,R)$ & mais sujeitos \\
+4 & $\delta(q_2,p)=(q_3,p,R)$ & 1º predicativo \\
+5 & $\delta(q_3,p)=(q_3,p,R)$ & mais predicativos \\
+6 & $\delta(q_3,\cad{>})=(q_4,\cad{>},L)$ & formato correto: volta \\
+7 & $\delta(q_4,s)=(q_4,s,L)$, $s\in\Sigma_2\cup\{\cad{*},\cad{+}\}$ & anda até a borda esquerda \\
+8 & $\delta(q_4,\cad{<})=(q_5,\cad{<},R)$ & recomeça o pareamento \\
+9 & $\delta(q_5,\cad{*})=(q_5,\cad{*},R)$ & pula sujeitos já pareados \\
+10--13 & $\delta(q_5,\cad{o})=(q_6,\cad{*},R)$, $\delta(q_5,\cad{a})=(q_7,\cad{*},R)$, $\delta(q_5,\cad{x})=(q_8,\cad{*},R)$, $\delta(q_5,\cad{y})=(q_9,\cad{*},R)$ & marca o sujeito e carrega a sua classe \\
+14 & $\delta(q_5,\cad{+})=(q_{10},\cad{+},R)$ & acabaram os sujeitos \\
+15 & $\delta(q_k,c)=(q_k,c,R)$ e $\delta(q_k,\cad{+})=(q_k,\cad{+},R)$, $k=6..9$ & atravessa até o 1º predicativo não pareado \\
+16--19 & $\delta(q_6,\cad{O})=\delta(q_7,\cad{A})=\delta(q_8,\cad{X})=\delta(q_9,\cad{Y})=(q_4,\cad{+},L)$ & concorda: marca e volta \\
+20 & $\delta(q_{10},\cad{+})=(q_{10},\cad{+},R)$ & só pode haver pareados \\
+21 & $\delta(q_{10},\cad{>})=(q_{ac},\cad{>},L)$ & \textbf{aceita} \\
+\bottomrule
+\end{longtable}}
+
+Expandindo as classes, são 61 transições. A tabela a seguir diz o que significa cada rejeição.
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Para em & Lendo & Significado \\
+\midrule
+$q_1$ & \cad{>} ou predicativo & entrada vazia ou sem sujeitos \\
+$q_2$ & \cad{>} & não há predicativos \\
+$q_3$ & sujeito & sujeito depois de predicativo \\
+$q_6$--$q_9$ & predicativo de outra classe & falta de concordância \\
+$q_6$--$q_9$ & \cad{>} & sobrou sujeito \\
+$q_{10}$ & predicativo não pareado & sobrou predicativo \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}[>=Stealth, shorten >=1pt, auto, node distance=2.2cm, every state/.style={minimum size=9mm}, font=\scriptsize]
+  \node[state, initial, initial text=] (q0) {$q_0$};
+  \node[state, right=of q0] (q1) {$q_1$};
+  \node[state, right=of q1] (q2) {$q_2$};
+  \node[state, right=of q2] (q3) {$q_3$};
+  \node[state, right=of q3] (q4) {$q_4$};
+  \node[state, below=2.6cm of q4] (q5) {$q_5$};
+  \node[state, left=3.2cm of q5, yshift=1.8cm] (q6) {$q_6$};
+  \node[state, below=0.5cm of q6] (q7) {$q_7$};
+  \node[state, below=0.5cm of q7] (q8) {$q_8$};
+  \node[state, below=0.5cm of q8] (q9) {$q_9$};
+  \node[state, below=2cm of q5] (q10) {$q_{10}$};
+  \node[state, accepting, right=of q10] (qac) {$q_{ac}$};
+  \path[->]
+    (q0) edge node {\texttt{<}/\texttt{<},R} (q1)
+    (q1) edge node {$c/c$,R} (q2)
+    (q2) edge[loop above] node {$c/c$,R} ()
+    (q2) edge node {$p/p$,R} (q3)
+    (q3) edge[loop above] node {$p/p$,R} ()
+    (q3) edge node {\texttt{>}/\texttt{>},L} (q4)
+    (q4) edge[loop above] node {$s/s$,L} ()
+    (q4) edge node {\texttt{<}/\texttt{<},R} (q5)
+    (q5) edge[loop right] node {\texttt{*}/\texttt{*},R} ()
+    (q5) edge node[pos=0.6] {\texttt{o}/\texttt{*},R} (q6)
+    (q5) edge node[pos=0.6] {\texttt{a}/\texttt{*},R} (q7)
+    (q5) edge node[pos=0.6,swap] {\texttt{x}/\texttt{*},R} (q8)
+    (q5) edge node[pos=0.6,swap] {\texttt{y}/\texttt{*},R} (q9)
+    (q6) edge[bend left=20] node {\texttt{O}/\texttt{+},L} (q4)
+    (q5) edge node {\texttt{+}/\texttt{+},R} (q10)
+    (q10) edge[loop below] node {\texttt{+}/\texttt{+},R} ()
+    (q10) edge node {\texttt{>}/\texttt{>},L} (qac);
+\end{tikzpicture}
+\caption{Diagrama do ALL. Rótulos: lido/escrito, movimento. Para não poluir o desenho, foram omitidos os laços de $q_6$--$q_9$ (sujeitos e \cad{+}/mesmo, R) e as voltas de $q_7$, $q_8$ e $q_9$ para $q_4$ (\cad{A}, \cad{X} e \cad{Y} / \cad{+}, L), análogas à de $q_6$.}
+\end{figure}
+
+\subsection{Determinismo e terminação}
+
+O ALL é determinístico: há no máximo uma transição para cada (estado, símbolo). Ele termina para toda entrada:
+\begin{itemize}
+  \item \textbf{Formato ($q_0$--$q_3$, depois $q_4$):} só anda para a direita até \cad{>} e depois só para a esquerda até \cad{<}, em até $2(n+1)$ passos.
+  \item \textbf{Pareamento:} cada volta $q_5\to q_{6..9}\to q_4\to q_5$ para em $q_{rej}$ ou marca \emph{duas} células novas. Como células marcadas nunca voltam a ser não marcadas, há no máximo $n/2$ voltas de $O(n)$ passos cada.
+  \item \textbf{Verificação ($q_{10}$):} só anda para a direita até a borda.
+\end{itemize}
+O total é $O(n^2)$. Na simulação, todas as entradas testadas pararam em menos de $(n+2)^2+n+2$ passos.
+
+\subsection{Rastreamentos}
+
+Cada linha resume os passos passados em um mesmo estado e mostra a última configuração antes de sair dele. O cabeçote está entre colchetes, e a posição 0 é o \cad{<}. Os rastreamentos completos, passo a passo, estão em \texttt{docs/rastreamentos/} no repositório.
+
+{\small
+\begin{longtable}{lll r}
+\caption{ALL sobre \cad{oaxyoOAXYO} (cenário 1): \textbf{aceita} em 114 passos.}\\
+\toprule
+Passos & Estado & Fita & Cab. \\
+\midrule
+\endhead
+0 & $q_0$ & \cad{[<]oaxyoOAXYO>} & 0 \\
+1 & $q_1$ & \cad{<[o]axyoOAXYO>} & 1 \\
+2--6 & $q_2$ & \cad{<oaxyo[O]AXYO>} & 6 \\
+7--11 & $q_3$ & \cad{<oaxyoOAXYO[>]} & 11 \\
+12--22 & $q_4$ & \cad{[<]oaxyoOAXYO>} & 0 \\
+23 & $q_5$ & \cad{<[o]axyoOAXYO>} & 1 \\
+24--28 & $q_6$ & \cad{<*axyo[O]AXYO>} & 6 \\
+29--34 & $q_4$ & \cad{[<]*axyo+AXYO>} & 0 \\
+35--36 & $q_5$ & \cad{<*[a]xyo+AXYO>} & 2 \\
+37--41 & $q_7$ & \cad{<**xyo+[A]XYO>} & 7 \\
+42--48 & $q_4$ & \cad{[<]**xyo++XYO>} & 0 \\
+49--51 & $q_5$ & \cad{<**[x]yo++XYO>} & 3 \\
+52--56 & $q_8$ & \cad{<***yo++[X]YO>} & 8 \\
+57--64 & $q_4$ & \cad{[<]***yo+++YO>} & 0 \\
+65--68 & $q_5$ & \cad{<***[y]o+++YO>} & 4 \\
+69--73 & $q_9$ & \cad{<****o+++[Y]O>} & 9 \\
+74--82 & $q_4$ & \cad{[<]****o++++O>} & 0 \\
+83--87 & $q_5$ & \cad{<****[o]++++O>} & 5 \\
+88--92 & $q_6$ & \cad{<*****++++[O]>} & 10 \\
+93--102 & $q_4$ & \cad{[<]*****+++++>} & 0 \\
+103--108 & $q_5$ & \cad{<*****[+]++++>} & 6 \\
+109--113 & $q_{10}$ & \cad{<*****+++++[>]} & 11 \\
+114 & $q_{ac}$ & \cad{<*****++++[+]>} & 10 \\
+\bottomrule
+\end{longtable}}
+
+\paragraph{Como a fita leva à decisão.} A cada volta, $q_5$ marca o sujeito mais à esquerda com \cad{*} e guarda a sua classe no estado. O estado de carregar corre até o primeiro predicativo não pareado, confere a classe e o marca com \cad{+}. Quando $q_5$ encontra \cad{+} em vez de um sujeito, todos os sujeitos foram pareados, e $q_{10}$ confirma que não sobrou nenhum predicativo.
+
+\paragraph{Cenário 3: \cad{oaxyoOAOYO}.} Os passos 0--51 seguem como no cenário 1, com os dois primeiros pares conferidos. No passo 52, $q_5$ marca \cad{x} e vai para $q_8$, que carrega o masculino plural. No passo 56, $q_8$ lê \cad{O} (masculino singular) na posição 8, com a fita \cad{<***yo++[O]YO>}. Como $\delta(q_8,\cad{O})$ não existe, o ALL \textbf{rejeita}. É o par \emph{os meninos \ldots\ médico}: o gênero bate, mas o número não.
+
+%======================================================================
+\section{Implementação}
+
+A implementação usa \textbf{Python} (3.8 ou mais recente), só com a biblioteca padrão, e tem uma interface de linha de comando.
+
+\begin{itemize}
+  \item \texttt{automato\_pilha.py}: tabela $\delta$ do AP como dicionário e simulador com rastreamento (estado, posição de leitura, pilha).
+  \item \texttt{automato\_linear.py}: tabela $\delta$ do ALL e simulador com rastreamento (estado, fita, cabeçote). Quando rejeita, traduz a transição ausente para o que ela significa na frase.
+  \item \texttt{validador.py}: verificação do alfabeto, integração AP $\to$ ALL e opções \texttt{--rastro} e \texttt{--modulo ap|all}.
+\end{itemize}
+
+\paragraph{A decisão vem da execução das transições.} Os simuladores não contam símbolos nem usam expressões regulares. Em cada passo eles consultam a tabela $\delta$ com a configuração atual e aplicam a transição encontrada: empilhar ou desempilhar, no AP; escrever e mover o cabeçote, no ALL. A ausência de transição significa rejeição. O simulador do ALL também verifica, a cada passo, que o cabeçote não saiu de $[0,n+1]$.
+
+\paragraph{Terminação e não determinismo.} Os dois autômatos são determinísticos, então não há alternativas a explorar. O programa termina pelos argumentos das Seções 3.3 e 4.4: o AP consome um símbolo por passo, e o ALL faz $O(n^2)$ passos.
+
+\paragraph{Uso.}
+\begin{verbatim}
+python3 validador.py "o,a,x,y&osrO,A,X,Y&O."
+python3 validador.py --rastro "o,a,x,y&osrO,A,O,Y&O."
+python3 validador.py --modulo all "oaxyoOAXYO"
+python3 testes/rodar_testes.py
+\end{verbatim}
+
+%======================================================================
+\section{Testes}
+
+Os casos ficam em \texttt{testes/casos.csv}. O script \texttt{testes/rodar\_testes.py} executa todos, gera as tabelas abaixo e verifica as exigências da lauda:
+\begin{itemize}
+  \item pelo menos 8 cadeias aceitas e 8 rejeitadas por módulo;
+  \item cadeias distintas e formadas só com o alfabeto do módulo;
+  \item 18 símbolos ou mais, exceto nos casos-limite.
+\end{itemize}
+
+\input{tabela-testes.tex}
+
+\section{Análise dos resultados}
+
+\begin{itemize}
+  \item \textbf{Todos os 41 casos produziram a decisão esperada.} Isso inclui os casos-limite: a menor frase aceita, \cad{o\&asrO\&A.}, a menor cadeia do ALL, \cad{oO}, e a entrada vazia nos dois módulos.
+  \item \textbf{Comparação com as definições:} o script compara os autômatos com as definições formais de $\Lum$ e $\Ldois$ em todas as cadeias curtas, ao todo 1.260.393 cadeias. Não houve divergência.
+  \item \textbf{Os casos AP-A8 e ALL-R8 resumem a divisão de responsabilidades.}
+  \begin{itemize}
+    \item AP-A8 tem estrutura correta e nenhuma concordância, e o AP aceita, porque só conta.
+    \item ALL-R8 tem os predicativos em ordem \emph{aninhada} (espelhada), exatamente a ordem que uma pilha conseguiria parear, e o ALL rejeita, porque a regra é cruzada.
+  \end{itemize}
+\end{itemize}
+
+\paragraph{Limitação observada.} O ALL executa um número quadrático de passos, porque precisa ir e voltar na fita para cada par, levando uma classe por vez no estado.
+
+\begin{center}
+\begin{tabular}{rrrrrr}
+\toprule
+Símbolos na fita & 2 & 10 & 20 & 40 & 100 \\
+Passos do ALL & 14 & 114 & 374 & 1.344 & 7.854 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\paragraph{Outras limitações.} O AP sozinho não detecta erros de concordância. Além disso, a entrada é codificada em símbolos, e o programa não analisa a frase escrita por extenso.
+
+%======================================================================
+\section{Origem do material e uso de inteligência artificial}
+
+\paragraph{Origem.}
+\begin{itemize}
+  \item O código, a gramática, os autômatos e os casos de teste foram elaborados para este trabalho; não foram adaptados de exercícios de sala, do exemplo da lauda ou de código de terceiros.
+  \item A ideia do problema adapta os argumentos de~\cite{shieber,barhillel,pullum}.
+  \item A teoria segue~\cite{sipser,hopcroft,kuroda}.
+  \item Os diagramas foram feitos em TikZ pela equipe.
+\end{itemize}
+
+\paragraph{Inteligência artificial.} Usamos o Claude Code (Anthropic, modelo Claude Opus 5.5) como apoio em:
+\begin{itemize}
+  \item divisão do trabalho em etapas;
+  \item proposta do problema;
+  \item rascunho da gramática, das especificações e das provas;
+  \item implementação dos simuladores e do script de testes;
+  \item rascunho deste relatório.
+\end{itemize}
+
+\textbf{O que a equipe verificou:} \textit{(preencher: rastreamentos simulados à mão, provas conferidas, referências conferidas na fonte, alterações feitas)}.
+
+%======================================================================
+\section{Contribuição de cada integrante}
+
+\begin{center}
+\begin{tabular}{p{4.5cm}p{9.5cm}}
+\toprule
+Integrante & Contribuição \\
+\midrule
+\textit{(Nome 1)} & \textit{(ex.: GLC, derivação e prova de não regularidade)} \\
+\textit{(Nome 2)} & \textit{(ex.: especificação e justificativa do AP)} \\
+\textit{(Nome 3)} & \textit{(ex.: especificação do ALL e limite da fita)} \\
+\textit{(Nome 4)} & \textit{(ex.: implementação e testes)} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%======================================================================
+\begin{thebibliography}{9}
+\bibitem{barhillel} BAR-HILLEL, Y.; SHAMIR, E. Finite-state languages: formal representations and adequacy problems. \emph{Bulletin of the Research Council of Israel}, v. 8F, p. 155--166, 1960. Reimpresso em BAR-HILLEL, Y. \emph{Language and Information}. Reading: Addison-Wesley, 1964.
+\bibitem{hopcroft} HOPCROFT, J. E.; MOTWANI, R.; ULLMAN, J. D. \emph{Introduction to Automata Theory, Languages, and Computation}. 3. ed. Boston: Pearson, 2006.
+\bibitem{kuroda} KURODA, S.-Y. Classes of languages and linear-bounded automata. \emph{Information and Control}, v. 7, n. 2, p. 207--223, 1964.
+\bibitem{pullum} PULLUM, G. K.; GAZDAR, G. Natural languages and context-free languages. \emph{Linguistics and Philosophy}, v. 4, n. 4, p. 471--504, 1982.
+\bibitem{shieber} SHIEBER, S. M. Evidence against the context-freeness of natural language. \emph{Linguistics and Philosophy}, v. 8, n. 3, p. 333--343, 1985.
+\bibitem{sipser} SIPSER, M. \emph{Introdução à Teoria da Computação}. 2. ed. São Paulo: Cengage Learning, 2007.
+\end{thebibliography}
+
+\end{document}

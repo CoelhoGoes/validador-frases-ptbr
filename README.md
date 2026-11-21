@@ -92,7 +92,7 @@ python3 testes/rodar_testes.py
 O script roda os 41 casos de [`testes/casos.csv`](testes/casos.csv): 9 aceitas e 9 rejeitadas para cada módulo, incluindo os casos-limite; os 3 cenários de integração; e 2 entradas com símbolo fora do alfabeto. Ele também:
 - confere as exigências da lauda (quantidade de casos, cadeias distintas, alfabeto do módulo, 18 símbolos ou mais fora dos casos-limite);
 - compara os dois autômatos com as definições formais de L1 e L2 em todas as cadeias curtas (cerca de 1,26 milhão);
-- gera as tabelas com entrada, decisão esperada, decisão obtida e regra verificada em [`testes/resultados.md`](testes/resultados.md) e `testes/resultados.tex` (para o relatório).
+- gera as tabelas com entrada, decisão esperada, decisão obtida e regra verificada em [`testes/resultados.md`](testes/resultados.md) e `relatorio/tabela-testes.tex` (incluída no relatório).
 
 Termina com código 0 se tudo passar.
 
