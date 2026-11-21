@@ -33,8 +33,8 @@ A frase acima vira `o,a,x,y&osrO,A,X,Y&O.`
 Requer **Python 3.8 ou mais recente** (testado com 3.12). Não há dependências externas: o `requirements.txt` está vazio de propósito.
 
 ```bash
-git clone <url-do-repositório>
-cd <pasta-do-repositório>
+git clone https://github.com/CoelhoGoes/validador-frases-ptbr.git
+cd validador-frases-ptbr
 python3 --version
 ```
 
