@@ -1,0 +1,65 @@
+# Rastreamento completo do ALL — `oaxyoOAOYO` (cenário 3)
+
+Resultado: **REJEITA** em 56 passos. Cabeçote entre colchetes; posição 0 = `<`.
+
+| Passo | Estado | Fita | Cabeçote |
+|---|---|---|---|
+| 0 | q0 | `[<]oaxyoOAOYO>` | 0 |
+| 1 | q1 | `<[o]axyoOAOYO>` | 1 |
+| 2 | q2 | `<o[a]xyoOAOYO>` | 2 |
+| 3 | q2 | `<oa[x]yoOAOYO>` | 3 |
+| 4 | q2 | `<oax[y]oOAOYO>` | 4 |
+| 5 | q2 | `<oaxy[o]OAOYO>` | 5 |
+| 6 | q2 | `<oaxyo[O]AOYO>` | 6 |
+| 7 | q3 | `<oaxyoO[A]OYO>` | 7 |
+| 8 | q3 | `<oaxyoOA[O]YO>` | 8 |
+| 9 | q3 | `<oaxyoOAO[Y]O>` | 9 |
+| 10 | q3 | `<oaxyoOAOY[O]>` | 10 |
+| 11 | q3 | `<oaxyoOAOYO[>]` | 11 |
+| 12 | q4 | `<oaxyoOAOY[O]>` | 10 |
+| 13 | q4 | `<oaxyoOAO[Y]O>` | 9 |
+| 14 | q4 | `<oaxyoOA[O]YO>` | 8 |
+| 15 | q4 | `<oaxyoO[A]OYO>` | 7 |
+| 16 | q4 | `<oaxyo[O]AOYO>` | 6 |
+| 17 | q4 | `<oaxy[o]OAOYO>` | 5 |
+| 18 | q4 | `<oax[y]oOAOYO>` | 4 |
+| 19 | q4 | `<oa[x]yoOAOYO>` | 3 |
+| 20 | q4 | `<o[a]xyoOAOYO>` | 2 |
+| 21 | q4 | `<[o]axyoOAOYO>` | 1 |
+| 22 | q4 | `[<]oaxyoOAOYO>` | 0 |
+| 23 | q5 | `<[o]axyoOAOYO>` | 1 |
+| 24 | q6 | `<*[a]xyoOAOYO>` | 2 |
+| 25 | q6 | `<*a[x]yoOAOYO>` | 3 |
+| 26 | q6 | `<*ax[y]oOAOYO>` | 4 |
+| 27 | q6 | `<*axy[o]OAOYO>` | 5 |
+| 28 | q6 | `<*axyo[O]AOYO>` | 6 |
+| 29 | q4 | `<*axy[o]+AOYO>` | 5 |
+| 30 | q4 | `<*ax[y]o+AOYO>` | 4 |
+| 31 | q4 | `<*a[x]yo+AOYO>` | 3 |
+| 32 | q4 | `<*[a]xyo+AOYO>` | 2 |
+| 33 | q4 | `<[*]axyo+AOYO>` | 1 |
+| 34 | q4 | `[<]*axyo+AOYO>` | 0 |
+| 35 | q5 | `<[*]axyo+AOYO>` | 1 |
+| 36 | q5 | `<*[a]xyo+AOYO>` | 2 |
+| 37 | q7 | `<**[x]yo+AOYO>` | 3 |
+| 38 | q7 | `<**x[y]o+AOYO>` | 4 |
+| 39 | q7 | `<**xy[o]+AOYO>` | 5 |
+| 40 | q7 | `<**xyo[+]AOYO>` | 6 |
+| 41 | q7 | `<**xyo+[A]OYO>` | 7 |
+| 42 | q4 | `<**xyo[+]+OYO>` | 6 |
+| 43 | q4 | `<**xy[o]++OYO>` | 5 |
+| 44 | q4 | `<**x[y]o++OYO>` | 4 |
+| 45 | q4 | `<**[x]yo++OYO>` | 3 |
+| 46 | q4 | `<*[*]xyo++OYO>` | 2 |
+| 47 | q4 | `<[*]*xyo++OYO>` | 1 |
+| 48 | q4 | `[<]**xyo++OYO>` | 0 |
+| 49 | q5 | `<[*]*xyo++OYO>` | 1 |
+| 50 | q5 | `<*[*]xyo++OYO>` | 2 |
+| 51 | q5 | `<**[x]yo++OYO>` | 3 |
+| 52 | q8 | `<***[y]o++OYO>` | 4 |
+| 53 | q8 | `<***y[o]++OYO>` | 5 |
+| 54 | q8 | `<***yo[+]+OYO>` | 6 |
+| 55 | q8 | `<***yo+[+]OYO>` | 7 |
+| 56 | q8 | `<***yo++[O]YO>` | 8 |
+
+No passo 56, δ(q8, `O`) não existe → **q_rej**.
