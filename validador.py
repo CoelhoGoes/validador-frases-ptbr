@@ -1,13 +1,3 @@
-"""Validador de frases com "respectivamente": AP (estrutura) → ALL (concordância cruzada).
-
-Uso:
-    python validador.py "o,a,x,y&osrO,A,X,Y&O."            # fluxo completo
-    python validador.py --rastro "o,a,x,y&osrO,A,X,Y&O."   # com rastreamento
-    python validador.py --modulo ap  "o&asrO&A."           # só o AP
-    python validador.py --modulo all "oaxyoOAXYO"          # só o ALL
-
-Código de saída: 0 = aceita, 1 = rejeita, 2 = símbolo fora do alfabeto.
-"""
 import argparse
 import sys
 
@@ -16,7 +6,6 @@ import automato_pilha
 
 
 def simbolo_invalido(w, alfabeto):
-    """Devolve a mensagem de erro do 1º símbolo fora do alfabeto, ou None."""
     for i, s in enumerate(w, 1):
         if s not in alfabeto:
             return (f"Erro: o símbolo '{s}' (posição {i}) não pertence ao alfabeto de entrada "
@@ -25,7 +14,6 @@ def simbolo_invalido(w, alfabeto):
 
 
 def para_all(w):
-    """Entrada do ALL: só sujeitos e predicativos, na ordem (sem ',', '&', 's', 'r', '.')."""
     return "".join(s for s in w if s in automato_linear.ALFABETO)
 
 

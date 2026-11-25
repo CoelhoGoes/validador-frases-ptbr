@@ -26,16 +26,16 @@ Há contradição, logo L2 não é LLC. ∎
 
 ## Definição formal
 
-M = (Q, Σ, Γ, δ, q0, ⊲, ⊳, q_ac, q_rej)
+M = (Q, Σ, Γ, δ, q0, ⊲, ⊳, q_ac)
 
-- **Estados:** Q = {q0, …, q10, q_ac, q_rej}, ou seja, 11 estados de trabalho mais 2 de parada
+- **Estados:** Q = {q0, …, q10, q_ac}, ou seja, 11 estados de trabalho mais 1 de aceitação (12 estados)
 - **Alfabeto de entrada:** Σ = C ∪ P = {`o`, `a`, `x`, `y`, `O`, `A`, `X`, `Y`}
 - **Alfabeto da fita:** Γ = Σ ∪ {`*`, `+`, `<`, `>`}
   - `*` = sujeito já pareado
   - `+` = predicativo já pareado
   - `<` e `>` = marcadores de borda (⊲ e ⊳)
 - **Configuração inicial:** a fita é `<` w `>`, com o cabeçote no `<` (posição 0) e estado q0
-- **Aceitação:** chegar em q_ac. **Rejeição:** chegar em q_rej, que é o destino de toda combinação (estado, símbolo) que não está na tabela.
+- **Aceitação:** chegar em q_ac. **Rejeição:** parar quando δ não está definida para o estado e o símbolo atuais. O simulador retorna a rejeição imediatamente e registra no rastreamento a configuração em que faltou a transição; não há um estado adicional de rejeição.
 
 ### Fita e limite de memória
 - Para uma entrada de n símbolos, a fita tem **n células graváveis** (posições 1..n) e os **dois marcadores fixos** nas posições 0 e n+1.
@@ -58,7 +58,7 @@ M = (Q, Σ, Γ, δ, q0, ⊲, ⊳, q_ac, q_rej)
 | q8 | pareamento | carrega **x**: tem de ser `X` |
 | q9 | pareamento | carrega **y**: tem de ser `Y` |
 | q10 | verificação | depois do último sujeito, só pode haver `+` até o `>` |
-| q_ac / q_rej | parada | aceita / rejeita |
+| q_ac | parada | aceita |
 
 ## Transições
 
@@ -87,7 +87,7 @@ M = (Q, Σ, Γ, δ, q0, ⊲, ⊳, q_ac, q_rej)
 | 19 | δ(q9, `Y`) = (q4, `+`, L) | concorda: marca e volta |
 | 20 | δ(q10, `+`) = (q10, `+`, R) | só pareados |
 | 21 | δ(q10, `>`) = (q_ac, `>`, L) | **aceita** |
-| — | qualquer outra combinação | **q_rej** |
+| — | qualquer outra combinação | **para e rejeita por falta de transição** |
 
 Expandindo c, p e s, são **61 transições**.
 
@@ -139,7 +139,7 @@ Os laços de q6–q9 (`c` ou `+` / mesmo, R) não aparecem no diagrama para não
 - **Determinístico:** para cada (estado, símbolo) há no máximo uma transição.
 - **Termina para toda entrada:**
   - **Fase de formato (q0–q3, depois q4):** só anda para a direita até o `>` e depois só para a esquerda até o `<`, em no máximo 2(n+1) passos.
-  - **Fase de pareamento:** cada volta q5 → q6..q9 → q4 → q5 ou para (em q_rej) ou **marca duas células novas** (um `*` e um `+`). Uma célula marcada nunca volta a ser não marcada, então há no máximo n/2 voltas, cada uma com no máximo 2(n+1) passos.
+  - **Fase de pareamento:** cada volta q5 → q6..q9 → q4 → q5 ou rejeita por falta de transição ou **marca duas células novas** (um `*` e um `+`). Uma célula marcada nunca volta a ser não marcada, então há no máximo n/2 voltas, cada uma com no máximo 2(n+1) passos.
   - **Verificação (q10):** só anda para a direita até o `>`.
 
   No total são O(n²) passos. O limite (n+2)² + n + 2 foi conferido na simulação para todas as entradas testadas.
@@ -196,7 +196,7 @@ Como ler: a cada volta, q5 marca o sujeito mais à esquerda (`o` → `*`) e guar
 | 49–51 | q5 | `<**[x]yo++OYO>` | 3 |
 | 52–56 | q8 | `<***yo++[O]YO>` | 8 |
 
-No passo 56 o ALL está em q8 ("levando um *x*", masculino plural) e lê `O` (masculino singular). δ(q8, `O`) não existe, então vai para **q_rej**. É o par *os meninos … médico*: o gênero bate, o número não.
+No passo 56 o ALL está em q8 ("levando um *x*", masculino plural) e lê `O` (masculino singular). δ(q8, `O`) não existe, então o simulador **para e rejeita nessa configuração**. É o par *os meninos … médico*: o gênero bate, o número não.
 
 ## Conferência
 Simulei a tabela acima em Python e comparei o resultado com a definição de L2:

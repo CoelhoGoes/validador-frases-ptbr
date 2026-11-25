@@ -1,8 +1,3 @@
-"""Roda os casos de testes/casos.csv e gera testes/resultados.md e relatorio/tabela-testes.tex.
-
-Uso:  python3 testes/rodar_testes.py
-Saída 0 se todos os casos derem a decisão esperada e a conferência com as definições passar.
-"""
 import contextlib
 import csv
 import io
@@ -14,9 +9,9 @@ from pathlib import Path
 PASTA = Path(__file__).resolve().parent
 sys.path.insert(0, str(PASTA.parent))
 
-import automato_linear  # noqa: E402
-import automato_pilha  # noqa: E402
-import validador  # noqa: E402
+import automato_linear
+import automato_pilha
+import validador
 
 NOMES = {"AP": "Autômato de pilha (AP)", "ALL": "Autômato linearmente limitado (ALL)",
          "INTEGRACAO": "Fluxo completo (AP → ALL)", "ALFABETO": "Símbolo fora do alfabeto"}
@@ -27,7 +22,6 @@ def decisao(aceita):
 
 
 def obter(modulo, w):
-    """Devolve (decisão obtida, motivo/mensagem)."""
     if modulo == "AP":
         ok, _, motivo = automato_pilha.executar(w)
         return decisao(ok), motivo
@@ -40,7 +34,7 @@ def obter(modulo, w):
             return "REJEITA/—", f"AP: {motivo}"
         ok2, _, motivo2 = automato_linear.executar(validador.para_all(w))
         return f"ACEITA/{decisao(ok2)}", f"ALL: {motivo2}"
-    # ALFABETO / ALFABETO_ALL: passa pelo programa de verdade e captura a mensagem exibida
+
     args = [w] if modulo == "ALFABETO" else ["--modulo", "all", w]
     saida = io.StringIO()
     with contextlib.redirect_stdout(saida):
@@ -49,7 +43,6 @@ def obter(modulo, w):
 
 
 def conferir_definicoes():
-    """Compara os autômatos com as definições de L1 e L2 em todas as cadeias curtas."""
     h = dict(zip("oaxy", "OAXY"))
 
     def em_l1(s):
@@ -81,7 +74,7 @@ def tex(s):
     s = s.replace("\\", r"\textbackslash{}")
     for a, b in [("&", r"\&"), ("_", r"\_"), ("#", r"\#"), ("%", r"\%"), ("{", r"\{"), ("}", r"\}")]:
         s = s.replace(a, b)
-    return s.replace("Z₀", "$Z_0$").replace("×", r"$\times$").replace("…", r"\ldots{}").replace("δ", r"$\delta$")
+    return s.replace("—", r"\textemdash{}").replace("/", r"/\allowbreak{}").replace("Z₀", "$Z_0$").replace("×", r"$\times$").replace("…", r"\ldots{}").replace("δ", r"$\delta$")
 
 
 def main():
@@ -93,7 +86,7 @@ def main():
         if not c["ok"]:
             problemas.append(f"{c['id']}: esperado {c['esperado']}, obtido {c['obtido']}")
 
-    # exigências da lauda para os testes de módulo
+
     for mod, alfabeto in [("AP", automato_pilha.ALFABETO), ("ALL", automato_linear.ALFABETO)]:
         linhas = [c for c in casos if c["modulo"] == mod]
         entradas = [c["entrada"] for c in linhas]
@@ -112,14 +105,14 @@ def main():
     if not definicoes.startswith("ok"):
         problemas.append(definicoes)
 
-    # relatórios
+
     md = ["# Resultados dos testes", "", "Gerado por `python3 testes/rodar_testes.py`. Não editar à mão.", ""]
     tx = ["% Gerado por testes/rodar_testes.py. Não editar à mão.", "% Requer \\usepackage{longtable}"]
     for grupo in ["AP", "ALL", "INTEGRACAO", "ALFABETO"]:
         linhas = [c for c in casos if c["modulo"].startswith(grupo)]
         md += [f"## {NOMES[grupo]}", "", "| ID | Entrada | Tam. | Esperado | Obtido | Regra verificada |",
                "|---|---|---|---|---|---|"]
-        tx += [f"\\subsection*{{{NOMES[grupo]}}}", "{\\footnotesize\\setlength{\\tabcolsep}{3pt}\\begin{longtable}{l p{4cm} r l l p{3.8cm}}",
+        tx += [f"\\subsection*{{{NOMES[grupo]}}}", "{\\footnotesize\\setlength{\\tabcolsep}{3pt}\\begin{longtable}{l p{4cm} r p{2cm} p{2cm} p{3.8cm}}",
                "\\textbf{ID} & \\textbf{Entrada} & \\textbf{Tam.} & \\textbf{Esperado} & \\textbf{Obtido} & "
                "\\textbf{Regra verificada} \\\\ \\hline \\endhead"]
         for c in linhas:
@@ -133,11 +126,11 @@ def main():
         md.append("")
         if grupo == "ALFABETO":
             md += ["### Mensagens de erro exibidas", ""]
-            tx += ["\\paragraph{Mensagens de erro exibidas}", "\\begin{itemize}"]
+            tx += ["\\paragraph{Mensagens de erro exibidas}", "{\\footnotesize\\raggedright\\begin{itemize}"]
             for c in linhas:
                 md.append(f"- **{c['id']}**: `{c['motivo']}`")
                 tx.append(f"\\item \\textbf{{{c['id']}}}: \\texttt{{{tex(c['motivo'])}}}")
-            tx.append("\\end{itemize}")
+            tx.append("\\end{itemize}}")
             md.append("")
     md += ["## Conferência com as definições de L1 e L2", "",
            f"Todas as cadeias de comprimento ≤ 7 sobre {{o,O,`,`,&,s,r,.}} (AP) e ≤ 6 sobre o alfabeto do ALL: "

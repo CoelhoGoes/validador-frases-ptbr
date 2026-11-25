@@ -326,14 +326,14 @@ $\Ldois$ é sensível ao contexto porque é reconhecida pelo ALL da próxima se�
 
 \subsection{Especificação}
 
-$M_2=(Q,\Sigma_2,\Gamma,\delta,q_0,\cad{<},\cad{>},q_{ac},q_{rej})$, com:
+$M_2=(Q,\Sigma_2,\Gamma,\delta,q_0,\cad{<},\cad{>},q_{ac})$, com:
 \begin{itemize}
-  \item $Q=\{q_0,\dots,q_{10},q_{ac},q_{rej}\}$: 11 estados de trabalho e 2 de parada;
+  \item $Q=\{q_0,\dots,q_{10},q_{ac}\}$: 11 estados de trabalho e 1 de aceitação;
   \item $\Gamma=\Sigma_2\cup\{\cad{*},\cad{+},\cad{<},\cad{>}\}$, em que \cad{*} é um sujeito já pareado, \cad{+} é um predicativo já pareado, e \cad{<} e \cad{>} são os marcadores de borda.
 \end{itemize}
 
 \textbf{Configuração inicial:} fita \cad{<}$w$\cad{>}, cabeçote no \cad{<} (posição 0) e estado $q_0$.
-\textbf{Aceitação:} chegar em $q_{ac}$. \textbf{Rejeição:} chegar em $q_{rej}$, que é o destino de toda combinação ausente da tabela.
+\textbf{Aceitação:} chegar em $q_{ac}$. \textbf{Rejeição:} parar quando $\delta$ não está definida para o estado e o símbolo atuais. O simulador retorna a rejeição imediatamente e registra no rastreamento a configuração em que faltou a transição; não há um estado adicional de rejeição.
 
 \paragraph{Limite da fita.} Para $n$ símbolos de entrada há $n$ células graváveis (posições $1..n$) e dois marcadores fixos (posições $0$ e $n+1$).
 \begin{itemize}
@@ -343,7 +343,7 @@ $M_2=(Q,\Sigma_2,\Gamma,\delta,q_0,\cad{<},\cad{>},q_{ac},q_{rej})$, com:
 \end{itemize}
 
 {\small
-\begin{longtable}{rlp{6.2cm}}
+\begin{longtable}{r p{8.8cm} p{5cm}}
 \toprule
 \# & Transição $\delta(q,\text{lê})=(q',\text{escreve},\text{mov.})$ & Papel \\
 \midrule
@@ -360,7 +360,7 @@ $M_2=(Q,\Sigma_2,\Gamma,\delta,q_0,\cad{<},\cad{>},q_{ac},q_{rej})$, com:
 10--13 & $\delta(q_5,\cad{o})=(q_6,\cad{*},R)$, $\delta(q_5,\cad{a})=(q_7,\cad{*},R)$, $\delta(q_5,\cad{x})=(q_8,\cad{*},R)$, $\delta(q_5,\cad{y})=(q_9,\cad{*},R)$ & marca o sujeito e carrega a sua classe \\
 14 & $\delta(q_5,\cad{+})=(q_{10},\cad{+},R)$ & acabaram os sujeitos \\
 15 & $\delta(q_k,c)=(q_k,c,R)$ e $\delta(q_k,\cad{+})=(q_k,\cad{+},R)$, $k=6..9$ & atravessa até o 1º predicativo não pareado \\
-16--19 & $\delta(q_6,\cad{O})=\delta(q_7,\cad{A})=\delta(q_8,\cad{X})=\delta(q_9,\cad{Y})=(q_4,\cad{+},L)$ & concorda: marca e volta \\
+16--19 & $\delta(q_6,\cad{O})=(q_4,\cad{+},L)$, $\delta(q_7,\cad{A})=(q_4,\cad{+},L)$, $\delta(q_8,\cad{X})=(q_4,\cad{+},L)$, $\delta(q_9,\cad{Y})=(q_4,\cad{+},L)$ & concorda: marca e volta \\
 20 & $\delta(q_{10},\cad{+})=(q_{10},\cad{+},R)$ & só pode haver pareados \\
 21 & $\delta(q_{10},\cad{>})=(q_{ac},\cad{>},L)$ & \textbf{aceita} \\
 \bottomrule
@@ -385,6 +385,7 @@ $q_{10}$ & predicativo não pareado & sobrou predicativo \\
 
 \begin{figure}[ht]
 \centering
+\resizebox{\linewidth}{!}{%
 \begin{tikzpicture}[>=Stealth, shorten >=1pt, auto, node distance=2.2cm, every state/.style={minimum size=9mm}, font=\scriptsize]
   \node[state, initial, initial text=] (q0) {$q_0$};
   \node[state, right=of q0] (q1) {$q_1$};
@@ -408,15 +409,16 @@ $q_{10}$ & predicativo não pareado & sobrou predicativo \\
     (q4) edge[loop above] node {$s/s$,L} ()
     (q4) edge node {\texttt{<}/\texttt{<},R} (q5)
     (q5) edge[loop right] node {\texttt{*}/\texttt{*},R} ()
-    (q5) edge node[pos=0.6] {\texttt{o}/\texttt{*},R} (q6)
-    (q5) edge node[pos=0.6] {\texttt{a}/\texttt{*},R} (q7)
-    (q5) edge node[pos=0.6,swap] {\texttt{x}/\texttt{*},R} (q8)
-    (q5) edge node[pos=0.6,swap] {\texttt{y}/\texttt{*},R} (q9)
-    (q6) edge[bend left=20] node {\texttt{O}/\texttt{+},L} (q4)
+    (q5) edge node[pos=0.55,above,sloped] {\texttt{o}/\texttt{*},R} (q6)
+    (q5) edge node[pos=0.55,above,sloped] {\texttt{a}/\texttt{*},R} (q7)
+    (q5) edge node[pos=0.55,below,sloped] {\texttt{x}/\texttt{*},R} (q8)
+    (q5) edge node[pos=0.55,below,sloped] {\texttt{y}/\texttt{*},R} (q9)
+    (q6.east) edge[bend right=15] node[pos=0.5,below,sloped] {\texttt{O}/\texttt{+},L} (q4.south west)
     (q5) edge node {\texttt{+}/\texttt{+},R} (q10)
     (q10) edge[loop below] node {\texttt{+}/\texttt{+},R} ()
     (q10) edge node {\texttt{>}/\texttt{>},L} (qac);
 \end{tikzpicture}
+}
 \caption{Diagrama do ALL. Rótulos: lido/escrito, movimento. Para não poluir o desenho, foram omitidos os laços de $q_6$--$q_9$ (sujeitos e \cad{+}/mesmo, R) e as voltas de $q_7$, $q_8$ e $q_9$ para $q_4$ (\cad{A}, \cad{X} e \cad{Y} / \cad{+}, L), análogas à de $q_6$.}
 \end{figure}
 
@@ -425,7 +427,7 @@ $q_{10}$ & predicativo não pareado & sobrou predicativo \\
 O ALL é determinístico: há no máximo uma transição para cada (estado, símbolo). Ele termina para toda entrada:
 \begin{itemize}
   \item \textbf{Formato ($q_0$--$q_3$, depois $q_4$):} só anda para a direita até \cad{>} e depois só para a esquerda até \cad{<}, em até $2(n+1)$ passos.
-  \item \textbf{Pareamento:} cada volta $q_5\to q_{6..9}\to q_4\to q_5$ para em $q_{rej}$ ou marca \emph{duas} células novas. Como células marcadas nunca voltam a ser não marcadas, há no máximo $n/2$ voltas de $O(n)$ passos cada.
+  \item \textbf{Pareamento:} cada volta $q_5\to q_{6..9}\to q_4\to q_5$ rejeita por falta de transição ou marca \emph{duas} células novas. Como células marcadas nunca voltam a ser não marcadas, há no máximo $n/2$ voltas de $O(n)$ passos cada.
   \item \textbf{Verificação ($q_{10}$):} só anda para a direita até a borda.
 \end{itemize}
 O total é $O(n^2)$. Na simulação, todas as entradas testadas pararam em menos de $(n+2)^2+n+2$ passos.

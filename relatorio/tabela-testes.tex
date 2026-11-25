@@ -1,7 +1,7 @@
 % Gerado por testes/rodar_testes.py. Não editar à mão.
 % Requer \usepackage{longtable}
 \subsection*{Autômato de pilha (AP)}
-{\footnotesize\setlength{\tabcolsep}{3pt}\begin{longtable}{l p{4cm} r l l p{3.8cm}}
+{\footnotesize\setlength{\tabcolsep}{3pt}\begin{longtable}{l p{4cm} r p{2cm} p{2cm} p{3.8cm}}
 \textbf{ID} & \textbf{Entrada} & \textbf{Tam.} & \textbf{Esperado} & \textbf{Obtido} & \textbf{Regra verificada} \\ \hline \endhead
 AP-A1 & \texttt{o,\allowbreak{}a,\allowbreak{}x,\allowbreak{}y\&osrO,\allowbreak{}A,\allowbreak{}X,\allowbreak{}Y\&O.} & 21 & ACEITA & ACEITA & 5 sujeitos e 5 predicativos, pontuação correta (cenário 1) \\
 AP-A2 & \texttt{o,\allowbreak{}a,\allowbreak{}x,\allowbreak{}y\&osrO,\allowbreak{}A,\allowbreak{}O,\allowbreak{}Y\&O.} & 21 & ACEITA & ACEITA & Estrutura correta; o AP não verifica a classe (cenário 3) \\
@@ -23,7 +23,7 @@ AP-R8 & \texttt{o,\allowbreak{}a,\allowbreak{}x,\allowbreak{}y\&osrO,\allowbreak
 AP-R9 & \texttt{(vazia)} & 0 & REJEITA & REJEITA & Caso-limite: entrada vazia (termina em q0) \\
 \end{longtable}}
 \subsection*{Autômato linearmente limitado (ALL)}
-{\footnotesize\setlength{\tabcolsep}{3pt}\begin{longtable}{l p{4cm} r l l p{3.8cm}}
+{\footnotesize\setlength{\tabcolsep}{3pt}\begin{longtable}{l p{4cm} r p{2cm} p{2cm} p{3.8cm}}
 \textbf{ID} & \textbf{Entrada} & \textbf{Tam.} & \textbf{Esperado} & \textbf{Obtido} & \textbf{Regra verificada} \\ \hline \endhead
 ALL-A1 & \texttt{oaxyoaxyoOAXYOAXYO} & 18 & ACEITA & ACEITA & 9 pares, todos concordam \\
 ALL-A2 & \texttt{ooooooooooOOOOOOOOOO} & 20 & ACEITA & ACEITA & 10 pares masculino singular \\
@@ -45,20 +45,20 @@ ALL-R8 & \texttt{oaxyoaxyoOYXAOYXAO} & 18 & REJEITA & REJEITA & Ordem aninhada (
 ALL-R9 & \texttt{(vazia)} & 0 & REJEITA & REJEITA & Caso-limite: entrada vazia \\
 \end{longtable}}
 \subsection*{Fluxo completo (AP → ALL)}
-{\footnotesize\setlength{\tabcolsep}{3pt}\begin{longtable}{l p{4cm} r l l p{3.8cm}}
+{\footnotesize\setlength{\tabcolsep}{3pt}\begin{longtable}{l p{4cm} r p{2cm} p{2cm} p{3.8cm}}
 \textbf{ID} & \textbf{Entrada} & \textbf{Tam.} & \textbf{Esperado} & \textbf{Obtido} & \textbf{Regra verificada} \\ \hline \endhead
-INT-1 & \texttt{o,\allowbreak{}a,\allowbreak{}x,\allowbreak{}y\&osrO,\allowbreak{}A,\allowbreak{}X,\allowbreak{}Y\&O.} & 21 & ACEITA/ACEITA & ACEITA/ACEITA & Estrutura e concordância corretas \\
-INT-2 & \texttt{o,\allowbreak{}a,\allowbreak{}x,\allowbreak{}y\&osrO,\allowbreak{}A,\allowbreak{}X\&Y.} & 19 & REJEITA/— & REJEITA/— & 5 sujeitos e 4 predicativos: o ALL não executa \\
-INT-3 & \texttt{o,\allowbreak{}a,\allowbreak{}x,\allowbreak{}y\&osrO,\allowbreak{}A,\allowbreak{}O,\allowbreak{}Y\&O.} & 21 & ACEITA/REJEITA & ACEITA/REJEITA & Estrutura correta, 3º par discorda em número (os meninos \ldots{} médico) \\
+INT-1 & \texttt{o,\allowbreak{}a,\allowbreak{}x,\allowbreak{}y\&osrO,\allowbreak{}A,\allowbreak{}X,\allowbreak{}Y\&O.} & 21 & ACEITA/\allowbreak{}ACEITA & ACEITA/\allowbreak{}ACEITA & Estrutura e concordância corretas \\
+INT-2 & \texttt{o,\allowbreak{}a,\allowbreak{}x,\allowbreak{}y\&osrO,\allowbreak{}A,\allowbreak{}X\&Y.} & 19 & REJEITA/\allowbreak{}\textemdash{} & REJEITA/\allowbreak{}\textemdash{} & 5 sujeitos e 4 predicativos: o ALL não executa \\
+INT-3 & \texttt{o,\allowbreak{}a,\allowbreak{}x,\allowbreak{}y\&osrO,\allowbreak{}A,\allowbreak{}O,\allowbreak{}Y\&O.} & 21 & ACEITA/\allowbreak{}REJEITA & ACEITA/\allowbreak{}REJEITA & Estrutura correta, 3º par discorda em número (os meninos \ldots{} médico) \\
 \end{longtable}}
 \subsection*{Símbolo fora do alfabeto}
-{\footnotesize\setlength{\tabcolsep}{3pt}\begin{longtable}{l p{4cm} r l l p{3.8cm}}
+{\footnotesize\setlength{\tabcolsep}{3pt}\begin{longtable}{l p{4cm} r p{2cm} p{2cm} p{3.8cm}}
 \textbf{ID} & \textbf{Entrada} & \textbf{Tam.} & \textbf{Esperado} & \textbf{Obtido} & \textbf{Regra verificada} \\ \hline \endhead
 ERR-1 & \texttt{o,\allowbreak{}a,\allowbreak{}x,\allowbreak{}b\&osrO,\allowbreak{}A,\allowbreak{}X,\allowbreak{}Y\&O.} & 21 & ERRO & ERRO & Símbolo 'b' fora do alfabeto do AP \\
 ERR-2 & \texttt{oaxyoaxyo,\allowbreak{}OAXYOAXYO} & 19 & ERRO & ERRO & Vírgula fora do alfabeto do ALL \\
 \end{longtable}}
 \paragraph{Mensagens de erro exibidas}
-\begin{itemize}
+{\footnotesize\raggedright\begin{itemize}
 \item \textbf{ERR-1}: \texttt{Erro: o símbolo 'b' (posição 7) não pertence ao alfabeto de entrada \{o, a, x, y, O, A, X, Y, ,, \&, s, r, .\}.}
 \item \textbf{ERR-2}: \texttt{Erro: o símbolo ',' (posição 10) não pertence ao alfabeto de entrada \{o, a, x, y, O, A, X, Y\}.}
-\end{itemize}
+\end{itemize}}
