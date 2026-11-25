@@ -62,4 +62,4 @@ Resultado: **REJEITA** em 56 passos. Cabeçote entre colchetes; posição 0 = `<
 | 55 | q8 | `<***yo+[+]OYO>` | 7 |
 | 56 | q8 | `<***yo++[O]YO>` | 8 |
 
-No passo 56, δ(q8, `O`) não existe → **q_rej**.
+No passo 56, δ(q8, `O`) não existe → o ALL **para e rejeita** nessa configuração.

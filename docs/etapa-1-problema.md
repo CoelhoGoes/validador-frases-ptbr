@@ -83,7 +83,7 @@ L2 = { w · h(w) | w ∈ C⁺ }, onde h(o)=O, h(a)=A, h(x)=X, h(y)=Y
 
 **Fita:** `<` + n células + `>`. Alfabeto da fita: Γ = C ∪ P ∪ {`*`, `+`, `<`, `>`}, em que `*` marca um sujeito já pareado e `+` marca um predicativo já pareado.
 
-**Esboço do ALL (11 estados de trabalho + aceita/rejeita; versão final na [Etapa 4](etapa-4-all.md)):**
+**Esboço do ALL (11 estados de trabalho + 1 de aceitação; versão final na [Etapa 4](etapa-4-all.md)):**
 
 | Estado | Papel |
 |---|---|
@@ -98,7 +98,7 @@ L2 = { w · h(w) | w ∈ C⁺ }, onde h(o)=O, h(a)=A, h(x)=X, h(y)=Y
 | q8 | carrega **x**: o mesmo, exigindo `X` |
 | q9 | carrega **y**: o mesmo, exigindo `Y` |
 | q10 | verificação final: só pode haver `+` até o `>` |
-| q_ac / q_rej | aceitação / rejeição |
+| q_ac | aceitação (a rejeição acontece quando falta a transição; não há estado próprio) |
 
 As fases são duas: q0–q3 conferem o formato (sujeitos e depois predicativos) e q5–q10 fazem o pareamento, com q4 voltando ao início entre uma coisa e outra. Cada classe precisa do seu próprio estado de "carregar", porque o estado é a única memória que o cabeçote leva de um lado da fita para o outro. É por isso que incluir o número aumentou o ALL.
 
