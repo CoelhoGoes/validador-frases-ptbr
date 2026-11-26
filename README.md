@@ -113,6 +113,7 @@ Termina com código 0 se tudo passar.
 | `docs/etapa-3-ap.md` | especificação formal do AP |
 | `docs/etapa-4-all.md` | especificação formal do ALL e prova de que L2 não é livre de contexto |
 | `docs/rastreamentos/` | rastreamentos completos do ALL |
+| `docs/apresentacao.pdf` | slides da apresentação |
 | `ETAPAS.md` | plano de desenvolvimento |
 
 ## Origem do material
